@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "license": "Apache-2.0",
     "type": "package",
-    "exposed-modules": [ "LocalStorage", "SessionStorage" ],
+    "exposed-modules": [ "LocalStorage" ],
     "source-directories": [
         "src"
     ],
