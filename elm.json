@@ -1,0 +1,28 @@
+{
+    "name": "lobanov/elm-localstorage",
+    "summary": "Interact with window.localStorage and window.sessionStorage using Task API",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "type": "package",
+    "exposed-modules": [ "LocalStorage", "SessionStorage" ],
+    "source-directories": [
+        "src"
+    ],
+    "elm-version": "0.19.1 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.5 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/json": "1.1.3 <= v < 2.0.0",
+        "lobanov/elm-taskport": "1.0.3 <= v < 2.0.0",
+        "elm/bytes": "1.0.8 <= v < 2.0.0",
+        "elm/file": "1.0.5 <= v < 2.0.0",
+        "elm/http": "2.0.0 <= v < 3.0.0",
+        "elm/random": "1.0.0 <= v < 2.0.0",
+        "elm/time": "1.0.0 <= v < 2.0.0",
+        "elm/url": "1.0.0 <= v < 2.0.0",
+        "elm/virtual-dom": "1.0.3 <= v < 2.0.0",
+        "elm-explorations/test": "1.2.2 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+    }
+}
