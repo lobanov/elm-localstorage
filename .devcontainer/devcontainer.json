@@ -17,7 +17,7 @@
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// 8000 is the default port used for the `elm reactor` command
-	// "forwardPorts": [8000],
+	"forwardPorts": [8000],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "elm make",

@@ -11,6 +11,9 @@
     "webpack-cli": "^4.10.0"
   },
   "scripts": {
-    "build": "npx webpack"
+    "build": "npx webpack",
+    "testbuild": "(cd test && elm make src/TestMain.elm --output dist/elm.js)",
+    "prewebtest": "yarn build && yarn testbuild",
+    "webtest": "(cd test && elm reactor)"
   }
 }
