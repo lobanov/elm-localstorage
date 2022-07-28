@@ -48,6 +48,18 @@ sessionStorage =
 {-| Creates a Task retrieving a value from the browser's `window.localStorage` object.
 
     LocalStorage.get "key" |> Task.attempt GotValue
+
+It is recommended to decode JSON value straight away, so your application's `update` function
+can be less cluttered. Also note that `get` returns `Nothing` if there is no value associated with a given key
+in the local storage. Typically, you would decode the result using `Maybe.map` like the following.
+
+    getListOfStrings : String -> TaskPort.Task (List String)
+    getListOfStrings key = LocalStorage.get key
+        |> Task.map (
+              Maybe.map (
+                  Json.Decode.decodeValue (Json.Decode.list Json.Decode.string)
+              )
+          )
 -}
 localGet : String -> Task (Maybe JE.Value)
 localGet = get localStorage
@@ -82,6 +94,18 @@ localClear = clear localStorage
 {-| Creates a Task retrieving a value from the browser's `window.sessionStorage` object.
 
     SessionStorage.get "key" |> Task.attempt GotValue
+
+It is recommended to decode JSON value straight away, so your application's `update` function
+can be less cluttered. Also note that `get` returns `Nothing` if there is no value associated with a given key
+in the sesison storage. Typically, you would decode the result using `Maybe.map` like the following.
+
+    getListOfStrings : String -> TaskPort.Task (List String)
+    getListOfStrings key = SessionStorage.get key
+        |> Task.map (
+              Maybe.map (
+                  Json.Decode.decodeValue (Json.Decode.list Json.Decode.string)
+              )
+          )
 -}
 sessionGet : String -> Task (Maybe JE.Value)
 sessionGet = get sessionStorage
