@@ -1,0 +1,11 @@
+{
+  "name": "elm-localstorage",
+  "version": "1.0.0",
+  "main": "js/index.js",
+  "type": "module",
+  "author": "Igor Lobanov",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "elm-taskport": "^2.0.0"
+  }
+}
