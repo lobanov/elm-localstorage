@@ -13,30 +13,20 @@ export function install(taskPort) {
   const ns = taskPort.createNamespace(PACKAGE_NAMESPACE, PACKAGE_VERSION);
 
   ns.register("localGet", (key) => window.localStorage.getItem(key));
-  ns.register("localPut", (key, value) => window.localStorage.setItem(key, JSON.stringify(value)));
-  ns.register("localList", (prefix) => {
+  ns.register("localPut", ({key, value}) => window.localStorage.setItem(key, JSON.stringify(value)));
+  ns.register("localRemove", (key) => window.localStorage.removeItem(key));
+  ns.register("localList", () => {
     return Array(window.localStorage.length)
-      .map((_, index) => window.localStorage.key(index))
-      .filter((name) => name.startsWith(prefix));
+      .map((_, index) => window.localStorage.key(index));
   });
-  ns.register("localClear", (prefix) => {
-    Array(window.localStorage.length)
-      .map((_, index) => window.localStorage.key(index))
-      .filter((name) => name.startsWith(prefix))
-      .forEach((name) => window.localStorage.removeItem(name));
-  });
+  ns.register("localClear", () => window.localStorage.clear());
 
   ns.register("sessionGet", (key) => window.sessionStorage.getItem(key));
-  ns.register("sessionPut", (key, value) => window.sessionStorage.setItem(key, JSON.stringify(value)));
-  ns.register("sessionList", (prefix) => {
+  ns.register("sessionPut", ({key, value}) => window.sessionStorage.setItem(key, JSON.stringify(value)));
+  ns.register("sessionRemove", (key) => window.sessionStorage.removeItem(key));
+  ns.register("sessionList", () => {
     return Array(window.sessionStorage.length)
-      .map((_, index) => window.sessionStorage.key(index))
-      .filter((name) => name.startsWith(prefix));
+      .map((_, index) => window.sessionStorage.key(index));
   });
-  ns.register("sessionClear", (prefix) => {
-    Array(window.sessionStorage.length)
-      .map((_, index) => window.sessionStorage.key(index))
-      .filter((name) => name.startsWith(prefix))
-      .forEach((name) => window.sessionStorage.removeItem(name));
-  });
+  ns.register("sessionClear", () => window.sessionStorage.clear());
 }
