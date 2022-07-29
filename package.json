@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "npx webpack",
-    "testbuild": "(cd test && elm make src/TestMain.elm --output dist/elm.js)",
+    "testbuild": "cp dist/localstorage.min.js test/build && (cd test && elm make src/TestMain.elm --output build/elm.js)",
     "prewebtest": "yarn build && yarn testbuild",
     "webtest": "(cd test && elm reactor)"
   }

@@ -9,11 +9,16 @@
 <body>
   <div id="results"></div>
   <script>
-    TaskPort.install();
+    TaskPort.install({ logCallErrors: true, logInteropErrors: true });
     LocalStorage.install(TaskPort);
 
-    const app = Elm.TestMain.init();
+    const app = Elm.TestMain.init({ flags: "" });
 
+    app.ports.reportTestResult.subscribe(function (report) {
+      console.log(report);
+    })
+
+    app.ports.runTest.send(0);
   </script>
 </body>
 </html>
