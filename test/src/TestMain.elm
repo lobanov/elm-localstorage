@@ -43,9 +43,6 @@ update msg model =
       TestCompleted index (Result.Err err) -> reportTestResult ( "test" ++ (String.fromInt index), False, testErrorToString err )
   )
 
-debugLogMap : String -> (a -> b) -> a -> a
-debugLogMap msg mapFn v = ( v, mapFn v ) |> Tuple.mapSecond (Debug.log msg) |> Tuple.first
-
 test1 : Task TestError ()
 test1 =
   let
@@ -53,22 +50,18 @@ test1 =
     clear = LocalStorage.localClear |> Task.mapError (OperationError "clear")
 
     put : Task TestError ()
-    put = LocalStorage.localPut "testKey" (JE.string "testValue") |> Task.mapError (OperationError "put")
+    put = LocalStorage.localPut "testKey" "testValue" |> Task.mapError (OperationError "put")
 
     list : Task TestError (List String)
     list = LocalStorage.localListKeys |> Task.mapError (OperationError "list")
 
-    getAndDecode : Task TestError String
-    getAndDecode = LocalStorage.localGet "testKey" |> Task.mapError (OperationError "get")
+    getAndUnwrap : Task TestError String
+    getAndUnwrap = LocalStorage.localGet "testKey" |> Task.mapError (OperationError "get")
       |> Task.andThen
         (\maybeValue -> 
           case maybeValue of
             Nothing -> Task.fail (ExpectationFailure "no value returned")
-            Just v -> 
-              let res = JD.decodeValue JD.string (debugLogMap "got" (JE.encode 0) v)
-              in case result of
-                Result.Ok string -> Task.succeed (Debug.log "decoded" string)
-                Result.Err err -> Task.fail (ExpectationFailure ("invalid JSON value returned: " ++ JD.errorToString err))
+            Just string -> Task.succeed string
         )
 
   in clear -- remove everything before testing
@@ -81,7 +74,7 @@ test1 =
           else
             Task.fail (ExpectationFailure (String.join "," keys))
         )
-      |> Task.andThen (\_ -> getAndDecode)
+      |> Task.andThen (\_ -> getAndUnwrap)
       |> Task.andThen
         (\value ->
           if (value == "testValue") then

@@ -48,131 +48,125 @@ sessionStorage =
   }
 
 {-| Returns a Task retrieving a value from the browser's `window.localStorage` object.
+The result will have `Nothing` if there is no value associated with a given key
+in the local storage.
 
-    LocalStorage.get "key" |> Task.attempt GotValue
-
-It is recommended to decode JSON value straight away, so your application's `update` function
-can be less cluttered. Also note that `get` returns `Nothing` if there is no value associated with a given key
-in the local storage. Typically, you would decode the result using `Maybe.map` like the following.
-
-    getListOfStrings : String -> TaskPort.Task (List String)
-    getListOfStrings key = LocalStorage.localGet key
-        |> Task.map (
-              Maybe.map (
-                  Json.Decode.decodeValue (Json.Decode.list Json.Decode.string)
-              )
-          )
+    type Msg = GotValue (TaskPort.Result (Maybe String))
+    LocalStorage.localGet "key" |> Task.attempt GotValue
 -}
-localGet : Key -> Task (Maybe JE.Value)
+localGet : Key -> Task (Maybe String)
 localGet = get localStorage
 
 {-| Returns a Task storing a value with a given key in the browser's `window.localStorage` object.
 Most likely this is going to be used to synchronise browser's local storage with the application
 model after it changes.
 
-    Json.Encode.string "Hello, World!" |> LocalStorage.localPut "key" |> Task.attempt Saved
+    type Msg = Saved (TaskPort.Result ())
+    LocalStorage.localPut "key" "value" |> Task.attempt Saved
 -}
-localPut : Key -> JE.Value -> Task ()
+localPut : Key -> String -> Task ()
 localPut = put localStorage
 
 {-| Returns a Task removing a value stored in the browser's `window.localStorage` object under a given key.
 
+    type Msg = Saved (TaskPort.Result ())
     LocalStorage.localRemove "key" |> Task.attempt Removed
 -}
 localRemove : Key -> Task ()
 localRemove = remove localStorage
 
 {-| Returns a Task enumerating all keys in the browser's `window.localStorage` object.
+
+    type Msg = GotKeys (TaskPort.Result (List String))
+    LocalStorage.localListKeys "key" |> Task.attempt GotKeys
 -}
-localListKeys : Task (List String)
+localListKeys : Task (List Key)
 localListKeys = listKeys localStorage
 
 {-| Returns a Task deleting all items from the browser's `window.localStorage` object.
 A good place to do this is when user clicks 'log off' button.
 
+    type Msg = Cleared (TaskPort.Result ())
     LocalStorage.localClear |> Task.attempt Cleared
 -}
 localClear : Task ()
 localClear = clear localStorage
 
 {-| Returns a Task retrieving a value from the browser's `window.sessionStorage` object.
+The result will have `Nothing` if there is no value associated with a given key
+in the local storage.
 
+    type Msg = GotValue (TaskPort.Result (Maybe String))
     LocalStorage.sessionGet "key" |> Task.attempt GotValue
-
-It is recommended to decode JSON value straight away, so your application's `update` function
-can be less cluttered. Also note that `get` returns `Nothing` if there is no value associated with a given key
-in the sesison storage. Typically, you would decode the result using `Maybe.map` like the following.
-
-    getListOfStrings : String -> TaskPort.Task (List String)
-    getListOfStrings key = LocalStorage.sessionGet key
-        |> Task.map (
-              Maybe.map (
-                  Json.Decode.decodeValue (Json.Decode.list Json.Decode.string)
-              )
-          )
 -}
-sessionGet : Key -> Task (Maybe JE.Value)
+sessionGet : Key -> Task (Maybe String)
 sessionGet = get sessionStorage
 
 {-| Returns a Task storing a value with a given key in the browser's `window.sessionStorage` object.
 Most likely this is going to be used to synchronise browser's window session state with the application
 model after it changes.
 
-    Json.Encode.string "Hello, World!" |> LocalStorage.sessionPut "key" |> Task.attempt Saved
+    type Msg = Saved (TaskPort.Result ())
+    LocalStorage.sessionPut "key" "value" |> Task.attempt Saved
 -}
-sessionPut : Key -> JE.Value -> Task ()
+sessionPut : Key -> String -> Task ()
 sessionPut = put sessionStorage
 
 {-| Returns a Task removing a value stored in the browser's `window.localStorage` object under a given key.
 
+    type Msg = Saved (TaskPort.Result ())
     LocalStorage.sessionRemove "key" |> Task.attempt Removed
 -}
 sessionRemove : Key -> Task()
 sessionRemove = remove sessionStorage
 
 {-| Returns a Task enumerating all keys in the browser's `window.sessionStorage` object.
+
+    type Msg = GotKeys (TaskPort.Result (List Key))
+    LocalStorage.sessionListKeys "key" |> Task.attempt GotKeys
 -}
-sessionListKeys : Task (List String)
+sessionListKeys : Task (List Key)
 sessionListKeys = listKeys sessionStorage
 
 {-| Returns a Task deleting all items from the browser's `window.sessionStorage` object.
 A good place to do this is when user clicks 'log off' button.
 
+    type Msg = Cleared (TaskPort.Result ())
     LocalStorage.sessionClear |> Task.attempt Cleared
 -}
 sessionClear : Task ()
 sessionClear = clear sessionStorage
 
-get : { names | getItem : QualifiedName } -> String -> Task (Maybe JE.Value)
+get : { names | getItem : QualifiedName } -> Key -> Task (Maybe String)
 get names = TaskPort.callNS
   { function = names.getItem
-  , valueDecoder = (JD.nullable JD.value)
+  , valueDecoder = (JD.nullable JD.string)
   , argsEncoder = JE.string
   }
 
-put : { names | putItem : QualifiedName } -> String -> JE.Value -> Task ()
+put : { names | putItem : QualifiedName } -> Key -> String -> Task ()
 put names key value = 
   let
-    encoder : ( String, JE.Value ) -> JE.Value
+    encoder : ( String, String ) -> JE.Value
     encoder = \( k, v ) -> JE.object
       [ ( "key", JE.string k )
-      , ( "value", v )
+      , ( "value", JE.string v )
       ]
-    in TaskPort.callNS 
-      { function = names.putItem
-      , valueDecoder = TaskPort.ignoreValue
-      , argsEncoder = encoder
-      }
-      ( key, value )
+  in TaskPort.callNS 
+    { function = names.putItem
+    , valueDecoder = TaskPort.ignoreValue
+    , argsEncoder = encoder
+    }
+    ( key, value )
 
-remove : { names | removeItem : QualifiedName } -> String -> Task ()
+remove : { names | removeItem : QualifiedName } -> Key -> Task ()
 remove names = TaskPort.callNS
   { function = names.removeItem
   , valueDecoder = TaskPort.ignoreValue
   , argsEncoder = JE.string
   }
 
-listKeys : { names | listKeys : QualifiedName } -> Task (List String)
+listKeys : { names | listKeys : QualifiedName } -> Task (List Key)
 listKeys names = TaskPort.callNoArgsNS
   { function = names.listKeys
   , valueDecoder = (JD.list JD.string)
