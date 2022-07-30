@@ -13,7 +13,7 @@ export function install(taskPort) {
   const ns = taskPort.createNamespace(PACKAGE_NAMESPACE, PACKAGE_VERSION);
 
   ns.register("localGet", (key) => window.localStorage.getItem(key));
-  ns.register("localPut", ({key, value}) => window.localStorage.setItem(key, JSON.stringify(value)));
+  ns.register("localPut", ({key, value}) => window.localStorage.setItem(key, value));
   ns.register("localRemove", (key) => window.localStorage.removeItem(key));
   ns.register("localList", () => {
     const names = Array(window.localStorage.length);
@@ -25,7 +25,7 @@ export function install(taskPort) {
   ns.register("localClear", () => window.localStorage.clear());
 
   ns.register("sessionGet", (key) => window.sessionStorage.getItem(key));
-  ns.register("sessionPut", ({key, value}) => window.sessionStorage.setItem(key, JSON.stringify(value)));
+  ns.register("sessionPut", ({key, value}) => window.sessionStorage.setItem(key, value));
   ns.register("sessionRemove", (key) => window.sessionStorage.removeItem(key));
   ns.register("sessionList", () => {
     const names = Array(window.sessionStorage.length);
