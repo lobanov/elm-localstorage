@@ -25,6 +25,9 @@ import Json.Encode as JE
 import Json.Decode as JD
 import TaskPort exposing (Task, inNamespace, QualifiedName)
 
+{-| Convenience alias for string keys used to store and retrive values
+in `window.localStorage` and `window.sessionStorage` objects.
+-}
 type alias Key = String
 
 inNS : String -> QualifiedName
@@ -63,6 +66,13 @@ model after it changes.
 
     type Msg = Saved (TaskPort.Result ())
     LocalStorage.localPut "key" "value" |> Task.attempt Saved
+
+It is likely you will need to store objects which are more complex than strings.
+It is easy to chain the use of `Json.Encode.encode` as follow.
+
+    Json.Encode.list Json.Encode.string [ 'v1', 'v2' ]
+        |> Json.Encode.encode 0
+        |> LocalStorage.localPut "key"
 -}
 localPut : Key -> String -> Task ()
 localPut = put localStorage
@@ -108,6 +118,13 @@ model after it changes.
 
     type Msg = Saved (TaskPort.Result ())
     LocalStorage.sessionPut "key" "value" |> Task.attempt Saved
+
+It is likely you will need to store objects which are more complex than strings.
+It is easy to chain the use of `Json.Encode.encode` as follow.
+
+    Json.Encode.list Json.Encode.string [ 'v1', 'v2' ]
+        |> Json.Encode.encode 0
+        |> LocalStorage.sessionPut "key"
 -}
 sessionPut : Key -> String -> Task ()
 sessionPut = put sessionStorage
