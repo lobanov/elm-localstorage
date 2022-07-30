@@ -2,7 +2,7 @@ port module TestMain exposing (..)
 
 import Task exposing (Task)
 import TaskPort
-import LocalStorage
+import LocalStorage exposing (Key)
 import Json.Encode as JE
 import Json.Decode as JD
 
@@ -49,14 +49,17 @@ test1 =
     clear : Task TestError ()
     clear = LocalStorage.localClear |> Task.mapError (OperationError "clear")
 
-    put : Task TestError ()
-    put = LocalStorage.localPut "testKey" "testValue" |> Task.mapError (OperationError "put")
+    put : Key -> String -> Task TestError ()
+    put k v = LocalStorage.localPut k v |> Task.mapError (OperationError "put")
 
     list : Task TestError (List String)
     list = LocalStorage.localListKeys |> Task.mapError (OperationError "list")
 
-    getAndUnwrap : Task TestError String
-    getAndUnwrap = LocalStorage.localGet "testKey" |> Task.mapError (OperationError "get")
+    remove : Key -> Task TestError ()
+    remove k = LocalStorage.localRemove k |> Task.mapError (OperationError "remove")
+
+    getAndUnwrap : Key -> Task TestError String
+    getAndUnwrap k = LocalStorage.localGet k |> Task.mapError (OperationError "get")
       |> Task.andThen
         (\maybeValue -> 
           case maybeValue of
@@ -65,7 +68,7 @@ test1 =
         )
 
   in clear -- remove everything before testing
-      |> Task.andThen (\_ -> put)
+      |> Task.andThen (\_ -> put "testKey" "testValue")
       |> Task.andThen (\_ -> list)
       |> Task.andThen
         (\keys ->
@@ -74,13 +77,22 @@ test1 =
           else
             Task.fail (ExpectationFailure (String.join "," keys))
         )
-      |> Task.andThen (\_ -> getAndUnwrap)
+      |> Task.andThen (\_ -> getAndUnwrap "testKey")
       |> Task.andThen
         (\value ->
           if (value == "testValue") then
             Task.succeed ()
           else
             Task.fail (ExpectationFailure value)
+        )
+      |> Task.andThen (\_ -> remove "testKey")
+      |> Task.andThen (\_ -> list)
+      |> Task.andThen
+        (\keys ->
+          if (List.isEmpty keys) then
+            Task.succeed ()
+          else
+            Task.fail (ExpectationFailure (String.join "," keys))
         )
       |> Task.andThen (\_ -> clear) -- clear everything after testing
 
