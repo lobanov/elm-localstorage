@@ -16,6 +16,9 @@
 
     app.ports.reportTestResult.subscribe(function (report) {
       console.log(report);
+      if (report[0] == 0) {
+        app.ports.runTest.send(1);
+      }
     })
 
     app.ports.runTest.send(0);

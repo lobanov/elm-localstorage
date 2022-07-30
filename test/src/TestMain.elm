@@ -6,7 +6,7 @@ import LocalStorage exposing (Key)
 import Json.Encode as JE
 import Json.Decode as JD
 
-port reportTestResult : ( String, Bool, String ) -> Cmd msg
+port reportTestResult : ( Int, Bool, String ) -> Cmd msg
 port runTest : (Int -> msg) -> Sub msg
 
 main : Program () Model Msg
@@ -35,66 +35,70 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   ( Idle,
     case msg of
-      StartTest i ->
-        if i == 0 then Task.attempt (TestCompleted 0) test1
-        else Cmd.none
+      StartTest 0 -> Task.attempt (TestCompleted 0) (roundTripTest localStorageTasks)
+      StartTest 1 -> Task.attempt (TestCompleted 1) (roundTripTest sessionStorageTasks)
+      StartTest _ -> Cmd.none
 
-      TestCompleted index (Result.Ok ()) -> reportTestResult ( "test" ++ (String.fromInt index), True, "" )
-      TestCompleted index (Result.Err err) -> reportTestResult ( "test" ++ (String.fromInt index), False, testErrorToString err )
+      TestCompleted index (Result.Ok ()) -> reportTestResult ( index, True, "" )
+      TestCompleted index (Result.Err err) -> reportTestResult ( index, False, testErrorToString err )
   )
 
-test1 : Task TestError ()
-test1 =
-  let
-    clear : Task TestError ()
-    clear = LocalStorage.localClear |> Task.mapError (OperationError "clear")
-
-    put : Key -> String -> Task TestError ()
-    put k v = LocalStorage.localPut k v |> Task.mapError (OperationError "put")
-
-    list : Task TestError (List String)
-    list = LocalStorage.localListKeys |> Task.mapError (OperationError "list")
-
-    remove : Key -> Task TestError ()
-    remove k = LocalStorage.localRemove k |> Task.mapError (OperationError "remove")
-
-    getAndUnwrap : Key -> Task TestError String
-    getAndUnwrap k = LocalStorage.localGet k |> Task.mapError (OperationError "get")
+localStorageTasks =
+  { clear = LocalStorage.localClear |> Task.mapError (OperationError "clear")
+  , put = \k v -> LocalStorage.localPut k v |> Task.mapError (OperationError "put")
+  , list = LocalStorage.localListKeys |> Task.mapError (OperationError "list")
+  , remove = \k -> LocalStorage.localRemove k |> Task.mapError (OperationError "remove")
+  , getAndUnwrap = \k -> LocalStorage.localGet k |> Task.mapError (OperationError "get")
       |> Task.andThen
         (\maybeValue -> 
           case maybeValue of
             Nothing -> Task.fail (ExpectationFailure "no value returned")
             Just string -> Task.succeed string
         )
+  }
 
-  in clear -- remove everything before testing
-      |> Task.andThen (\_ -> put "testKey" "testValue")
-      |> Task.andThen (\_ -> list)
+sessionStorageTasks =
+  { clear = LocalStorage.sessionClear |> Task.mapError (OperationError "clear")
+  , put = \k v -> LocalStorage.sessionPut k v |> Task.mapError (OperationError "put")
+  , list = LocalStorage.sessionListKeys |> Task.mapError (OperationError "list")
+  , remove = \k -> LocalStorage.sessionRemove k |> Task.mapError (OperationError "remove")
+  , getAndUnwrap = \k -> LocalStorage.sessionGet k |> Task.mapError (OperationError "get")
       |> Task.andThen
-        (\keys ->
-          if (List.length keys == 1 && List.member "testKey" keys) then
-            Task.succeed ()
-          else
-            Task.fail (ExpectationFailure (String.join "," keys))
+        (\maybeValue -> 
+          case maybeValue of
+            Nothing -> Task.fail (ExpectationFailure "no value returned")
+            Just string -> Task.succeed string
         )
-      |> Task.andThen (\_ -> getAndUnwrap "testKey")
-      |> Task.andThen
-        (\value ->
-          if (value == "testValue") then
-            Task.succeed ()
-          else
-            Task.fail (ExpectationFailure value)
-        )
-      |> Task.andThen (\_ -> remove "testKey")
-      |> Task.andThen (\_ -> list)
-      |> Task.andThen
-        (\keys ->
-          if (List.isEmpty keys) then
-            Task.succeed ()
-          else
-            Task.fail (ExpectationFailure (String.join "," keys))
-        )
-      |> Task.andThen (\_ -> clear) -- clear everything after testing
+  }
+
+roundTripTest tasks = tasks.clear -- remove everything before testing
+  |> Task.andThen (\_ -> tasks.put "testKey" "testValue")
+  |> Task.andThen (\_ -> tasks.list)
+  |> Task.andThen
+    (\keys ->
+      if (List.length keys == 1 && List.member "testKey" keys) then
+        Task.succeed ()
+      else
+        Task.fail (ExpectationFailure ("should have 'testKey' after successful put: " ++ String.join "," keys))
+    )
+  |> Task.andThen (\_ -> tasks.getAndUnwrap "testKey")
+  |> Task.andThen
+    (\value ->
+      if (value == "testValue") then
+        Task.succeed ()
+      else
+        Task.fail (ExpectationFailure ("should have got 'testValue' after successful get: " ++ value))
+    )
+  |> Task.andThen (\_ -> tasks.remove "testKey")
+  |> Task.andThen (\_ -> tasks.list)
+  |> Task.andThen
+    (\keys ->
+      if (List.isEmpty keys) then
+        Task.succeed ()
+      else
+        Task.fail (ExpectationFailure ("should be empty after successful remove: " ++ String.join "," keys))
+    )
+  |> Task.andThen (\_ -> tasks.clear) -- clear everything after testing
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = runTest StartTest

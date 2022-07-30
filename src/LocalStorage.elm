@@ -45,7 +45,7 @@ localStorage =
 sessionStorage =
   { getItem = inNS "sessionGet"
   , putItem = inNS "sessionPut"
-  , removeItem = inNS "localRemove"
+  , removeItem = inNS "sessionRemove"
   , listKeys = inNS "sessionList"
   , clear = inNS "sessionClear"
   }
