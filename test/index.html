@@ -7,7 +7,10 @@
   <script src="build/elm.js"></script>
 </head>
 <body>
-  <div id="results"></div>
+  <div>
+    <p>Test 1: <span id="r0">pending</span></p>
+    <p>Test 2: <span id="r1">pending</span></p>
+  </div>
   <script>
     TaskPort.install({ logCallErrors: true, logInteropErrors: true });
     LocalStorage.install(TaskPort);
@@ -15,8 +18,11 @@
     const app = Elm.TestMain.init({ flags: "" });
 
     app.ports.reportTestResult.subscribe(function (report) {
-      console.log(report);
-      if (report[0] == 0) {
+      const testIndex = report[0];
+      const resultElt = document.getElementById("r" + testIndex);
+      resultElt.textContent = report[1]? "PASS" : "FAIL: " + report[2];
+      
+      if (testIndex == 0) {
         app.ports.runTest.send(1);
       }
     })
