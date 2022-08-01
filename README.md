@@ -10,19 +10,32 @@ In addition to being useful on its own, this package is also providing an exampl
 Installation
 ------------
 
-This package contains Elm code that requires setup on the JavaScript side. There are a few steps that need to be done.
+This package contains Elm code that requires setup on the JavaScript side. It also uses `elm-taskport` package for Task-based JavaScript interop. A few installation steps are required before this package can be used.
 
-### 1. Include JavaScript companion code
-There are two ways to go about doing this depending on what is more appropriate for your application.
+### 1. Add elm-localstorage to your Elm application
 
-For Elm applications that don't have much of HTML/JavaScript code, TaskPort and elm-localstorage can be included using a `<script>` tag.
+The Elm package is installed in a traditional way.
 
-```html
-<script src="https://unpkg.com/elm-taskport@2.0.0/dist/taskport.min.js"></script>
-<script src="https://unpkg.com/elm-localstorage@ELM_PACKAGE_VERSION/dist/localstorage.min.js"></script>
+```sh
+elm install elm-localstorage
 ```
 
-Substitute the actual version of the `elm-localstorage` package instead of `ELM_PACKAGE_VERSION`. The code is checking that Elm and JS are on the same version to prevent things blowing up. If dependency on [unpkg CDN](https://unpkg.com) makes your nervous, you can choose to distribute the JS files with the rest of your application. In this case, simply save them locally, add to your codebase, and modify the path in the `<script>` tag accordingly.
+Take a note of the versions of `elm-localstorage` and `elm-taskport` packages that got pulled from the Elm package registry. They will be required in the next step.
+
+Note that this package should work with any version of `elm-taskport` above 2.0.0, so if your application requires `elm-taskport` of an earlier version, feel free to not use the latest one.
+
+### 1. Add JavaScript companion code to your application
+
+There are two ways to go about doing this depending on what is more appropriate for your application.
+
+For Elm applications that don't have much of HTML/JavaScript code, JavaScript code for `elm-taskport` and `elm-localstorage` packages can be included using a `<script>` tag.
+
+```html
+<script src="https://unpkg.com/elm-taskport@TASKPORT_PACKAGE_VERSION/dist/taskport.min.js"></script>
+<script src="https://unpkg.com/elm-localstorage@LOCALSTORAGE_PACKAGE_VERSION/dist/localstorage.min.js"></script>
+```
+
+Substitute the version of `elm-taskport` package instead of `TASKPORT_PACKAGE_VERSION` the version of the `elm-localstorage` package instead of `LOCALSTORAGE_PACKAGE_VERSION`. The code is checking that Elm and JS are on the same version to prevent things blowing up. If dependency on [unpkg CDN](https://unpkg.com) makes your nervous, you can choose to distribute the JS files with the rest of your application. In this case, simply save them locally, add to your codebase, and modify the path in the `<script>` tag accordingly.
 
 For Elm applications which use a bundler like Webpack, JavaScript code for the package can be downloaded via NPM.
 
@@ -30,7 +43,7 @@ For Elm applications which use a bundler like Webpack, JavaScript code for the p
 npm add --save elm-localstorage # or yarn add elm-localstorage --save
 ```
 
-This will bring all necessary JavaScript files files into `node_modules/elm-localstorage` directory, as well as . Once that is done, you can include TaskPort and LocalStorage in your main JavaScript or TypeScript file.
+This will bring all necessary JavaScript files files into `node_modules` directory. Once that is done, you can include the JavaScript code for `elm-localstorage` and `elm-taskport` in your main JavaScript (`app.js`) or TypeScript (`app.ts`) file.
 
 ```js
 import * as TaskPort from 'elm-taskport';
@@ -42,7 +55,7 @@ import * as LocalStorage from 'elm-localstorage';
 
 ### 2. Install TaskPort and LocalStorage
 
-For browser-based Elm applications add a script to your HTML file to enable TaskPort in your environment and then register JavaScript interop functions required for this packge.
+Add a script block to your HTML file to enable TaskPort in your environment and then register JavaScript interop functions required for this packge.
 
 ```html
 <script>
@@ -53,45 +66,173 @@ For browser-based Elm applications add a script to your HTML file to enable Task
 </script>
 ```
 
+Check out `elm-taskport` package documentation for details on configuring TaskPort, but default settings should work in most cases.
+
 Usage
 -----
 
+### Overview
+
 This package uses taskports under the hood. Taskports are a JavaScript interop mechanism introduced by [elm-taskport](https://package.elm-lang.org/packages/lobanov/elm-taskport/latest/) package, which allow to wrap call of any JavaScript code into a [Task](https://package.elm-lang.org/packages/elm/core/latest/Task#Task), which is Elm's abstraction for an effectful operation. Tasks can be chained together to achieve complex side effects, such as making multiple API calls, interacting with the runtime environment, etc.
 
-## Basic usage
+This package provides `LocalStorage` Elm module, that contains functions creating Tasks representing operations with `window.localStorage` and `window.sessionStorage` objects. The module does not provide a mechanism to hand these tasks over to the Elm runtime for execution. Instead, the developers are expected to do that in their `init` or `update` function by the means of invoking `Task.attempt` to create `Cmd` values. If this does not make sense, make sure you are familiar with the principles of the effectful [Elm Architecture](https://guide.elm-lang.org/effects/) and the API of the Elm's [Task module](https://package.elm-lang.org/packages/elm/core/latest/Task).
 
-LocalStorage module's interface closely follows standard operations available in `window.localStorage` and `window.sessionStorage` objects.
-In the Web Platform `window.localStorage` provides a key-value API used for storing any information on user's device, which is persisted between browsing sessions. On contrary, `window.sessionStorage` persists information only whilst the current browsing tab is open. The API is identical between the two, only the retention policy is different.
+The API of `LocalStorage` module follows the standard operations available in `window.localStorage` and `window.sessionStorage` objects in modern browsers. In the Web Platform `window.localStorage` provides a key-value API used for storing any information on user's device, which is persisted between browsing sessions. On contrary, `window.sessionStorage` persists information only whilst the current browsing tab is open. The API is identical between the two, only the retention logic is different.
 
-operation | `window.localStorage` | `window.sessionStorage`
----|---|---
-set value for a key | `LocalStorage.localPut` | `LocalStorage.sessionPut`
-get value for a key | `LocalStorage.localGet` | `LocalStorage.sessionGet`
-remove value for a given key | `LocalStorage.localRemove` | `LocalStorage.sessionRemove`
-list all keys | `LocalStorage.localListKeys` | `LocalStorage.sessionListKeys`
-remove all values | `LocalStorage.localClear` | `LocalStorage.sessionClear`
+The following table summarises the functions available in `LocalStorage` module using TypeScript typing notation.
+
+JavaScript operation (TypeScript typing notation) | `LocalStorage` module function
+---|---
+`window.localStorage.putItem(key: string, value: string): void` | `LocalStorage.localPut : Key -> String -> Task ()`
+`window.localStorage.getItem(key: string): string \| undefined` | `LocalStorage.localGet : Key -> Task String`
+`window.localStorage.removeItem(key: string): void` | `LocalStorage.localRemove : Key -> Task ()`
+`window.localStorage.key(index: integer): string`<br>where index = 0 .. `window.localStorage.length` | `LocalStorage.localListkeys : Task (List String)`
+`window.localStorage.clear(): void` | `LocalStorage.localClear : Task ()`
+`window.sessionStorage.putItem(key: string, value: string): void` | `LocalStorage.sessionPut : Key -> String -> Task ()`
+`window.sessionStorage.getItem(key: string): string \| undefined` | `LocalStorage.sessionGet : Key -> Task String`
+`window.sessionStorage.removeItem(key: string): void` | `LocalStorage.sessionRemove : Key -> Task ()`
+`window.sessionStorage.key(index: integer): string`<br>where index = 0 .. `window.sessionStorage.length` | `LocalStorage.localListkeys : Task (List String)`
+`window.sessionStorage.clear(): void` | `LocalStorage.sessionClear : Task ()`
+
+### Basic examples
+
+The below examples demonstrate how to use `LocalStorage.localXXX` functions. The same would apply to their `LocalStorage.sessionXXX` counterparts.
 
 Set value for a key:
 
 ```elm
-LocalStorage.localPut "key" "value" |> Task.attempt
+type Msg = OK (Result TaskPort.Error ())
+LocalStorage.localPut "key" "value" |> Task.attempt OK
 ```
 
-## Advanced usage
+Get value for a key:
+
+```elm
+type Msg = GotValue (Result TaskPort.Error (Maybe String)) -- note that if there is no value, the result will be Result.Ok Nothing
+LocalStorage.localGet "key" |> Task.attempt GotValue
+```
+
+List keys:
+
+```elm
+type Msg = GotKeys (Result TaskPort.Error (List String))
+LocalStorage.localListKeys |> Task.attempt GotKeys
+```
+
+Remove value for a key:
+
+```elm
+type Msg = OK (Result TaskPort.Error ())
+LocalStorage.localRemove "key" |> Task.attempt OK
+```
+
+### Advanced examples
 
 Benefits of using Task API are the most apparent when you need to perform several effectful operations one after another.
 
-### Removing all keys with a given prefix
+#### Removing all keys with a given prefix
 
 ```elm
 removeWithPrefix : String -> TaskPort.Task ()
 removeWithPrefix prefix = 
-    LocalStorage.localListKeys
-        |> Task.andThen (\keys ->
-            keys
+    LocalStorage.localListKeys -- produces a Task Error (List String)
+        |> Task.andThen -- : List String -> Task Error ()
+            (\keys -> keys
                 |> List.filter (String.startsWith prefix)
                 |> List.map LocalStorage.localRemove
-                |> Task.sequence
-        )
-        |> Task.map \_ -> ()
+                |> Task.sequence -- takes List (Task Error ()) and executes as a sequence of tasks wrapping all in Task Error (List ())
+            )
+        |> Task.map \_ -> () -- only to avoid the weird function type, othertise it'll be TaskPort.Task (List ())
 ```
+
+#### Store and retrieve JSON values in local storage
+
+```elm
+import Json.Encode as JE
+import Json.Decode as JD
+import TaskPort
+import LocalStorage
+
+putJson : Key -> JE.Value -> Task ()
+putJson key jsonValue = LocalStorage.localPut key (JE.encode 0 jsonValue)
+
+-- custom type combining TaskPort errors and Json decoding errors
+-- because the Task can only have one error type
+type JsonError 
+    = InteropCallFailed TaskPort.Error
+    | MalformedJson JD.Error
+
+getJson : Key -> Task JsonError JE.Value
+getJson key = LocalStorage.localGet key
+    |> Task.andThen
+        (\stringValue -> 
+            case (JD.decodeString JD.value) of -- JD.decodeString produces a Result
+                Result.Ok jsonValue -> Task.succeed jsonValue
+                Result.Err decodeError -> Task.fail (MalformedJson decodeError)
+        )
+```
+
+#### Combining different Tasks
+
+In the following example application's `init` function attempts to retrieve the model from the session storage to recover from a page refresh, but if nothing is returned, it makes an HTTP call to the backend to initialize the model. The `update` function synchronises the session storage with the model of the application on every change.
+
+```elm
+import Json.Encode as JE
+import Json.Decode as JD
+import TaskPort
+import LocalStorage
+import Http
+
+type alias Config = { {- ... complex type ... -} }
+type alias Model = Maybe Config
+type InitError = InteropError TaskPort.Error | HttpError Http.Error
+type Msg = Initialized (Result InitError Config) | ConfigChange {- ... parameters ... -} | Updated ()
+
+configDecoder : JD.Decoder Config
+configDecoder = {- ... decoder implementation ... -}
+
+configEncoder : Config -> JE.Value
+configEncoder config = {- ... encoder implementation -}
+
+init : () -> ( Model, Cmd )
+init _ =
+    ( Nothing, -- no value initially
+    , LocalStorage.sessionGet "model"
+        |> Task.onError InteropError -- force conformance to the single error type of InitError
+        |> Task.andThen
+            (\maybeConfig -> case maybeConfig of
+                Just config -> Task.succeed config
+                Nothing -> Http.task { method = "GET", {- ... configure http call ... -} }
+                    |> Task.HttpError InteropError -- force conformance to the single error type of InitError
+            )
+        |> Task.attempt Initialized -- pass the task to the Elm runtime
+    )
+
+update : Msg -> Model -> ( Model, Cmd )
+update msg maybeModel =
+    case ( maybeModel, msg ) of
+        ( Nothing, Initialized (Result.Ok config) ) -> ( Just config, Cmd.none )
+        ( Just config, ConfigChange {- ... parameters ... -} ) -> 
+            ( Just {- ... updated config ... -}
+            , configEncoder config -- synchronizing browser's session storage on any config change
+                |> JE.encode 0 
+                |> LocalStorage.sessionPut "model"
+                |> Task.onError (\_ -> Task.succeed ())
+                |> Task.perform Updated -- we choose to ignore errors
+            )
+        
+        -- for the sake of example, we are ignoring other combinations, such as:
+        -- ( Just mode, Updated ) when session storage is synchronised with the model update
+        -- ( Nothing, Initialized (Result.Err error) ) something went wrong
+        -- a robust application will handle those in a meaningful way even if only to show an error to the user
+        _ -> ( maybeModel, Cmd.none )
+```
+
+Getting support
+---------------
+
+For questions or general enquiries feel free to tag or DM `@lobanov` on [Elm Slack](https://elmlang.slack.com/).
+
+For issues or suggestions please raise an issue on GitHub.
+
+PRs are welcome.
