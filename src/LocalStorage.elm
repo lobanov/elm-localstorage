@@ -8,17 +8,17 @@ module LocalStorage exposing
 Thanks to the latter, interactions with the local and session storage could be chained
 or mixed with other Task-based APIs, such as [elm/http](https://package.elm-lang.org/packages/elm/http/latest/).
 
-For example, consider an application that retrieves it's configuration from
-the backend, but subsequently caches it in the window session, so it could
-survive window refreshes even if there is no internet connectivity. Tasks allow
-such logic to be expressed explicitly in Elm like the following.
+See package documentation for examples of using the module.
 
-    LocalStorage.sessionGet "config"
-        |> Task.andThen Maybe.withDefault
-            ( Http.task { method = "GET", {- ... fetch config from the backend -} }
-                |> Task.andThen LocalStorage.sessionPut "config"
-            )
-        |> Task.attempt GotConfig
+# General
+@docs Key
+
+# Local storage
+@docs localGet, localPut, localRemove, localListKeys, localClear
+
+# Session storage
+@docs sessionGet, sessionPut, sessionRemove, sessionListKeys, sessionClear
+
 -}
 
 import Json.Encode as JE
