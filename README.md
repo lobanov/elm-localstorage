@@ -208,10 +208,14 @@ init _ =
     , LocalStorage.sessionGet "model"
         |> Task.onError InteropError -- force conformance to the single error type of InitError
         |> Task.andThen
-            (\maybeConfig -> case maybeConfig of
-                Just config -> Task.succeed config
-                Nothing -> Http.task { method = "GET", {- ... configure http call ... -} }
-                    |> Task.HttpError InteropError -- force conformance to the single error type of InitError
+            (\maybeConfigString -> maybeConfigString
+                -- if unable to decode JSON (e.g. format has changed), just fall back to the HTTP call
+                |> Maybe.andThen (\configString -> Result.toMaybe (JD.decodeString configDecoder configString)) 
+                |> Maybe.andThen Task.succeed
+                |> Maybe.withDefault
+                ( Http.task { {- ... configure http call using configDecoder, omitted for brevity ... -} }
+                    |> Task.onError HttpError -- force conformance to the single error type of InitError
+                )
             )
         |> Task.attempt Initialized -- pass the task to the Elm runtime
     )
