@@ -79,20 +79,28 @@ This package provides `LocalStorage` Elm module, that contains functions creatin
 
 The API of `LocalStorage` module follows the standard operations available in `window.localStorage` and `window.sessionStorage` objects in modern browsers. In the Web Platform `window.localStorage` provides a key-value API used for storing any information on user's device, which is persisted between browsing sessions. On contrary, `window.sessionStorage` persists information only whilst the current browsing tab is open. The API is identical between the two, only the retention logic is different.
 
-The following table summarises the functions available in `LocalStorage` module using TypeScript typing notation.
+The following table summarises the functions available in `LocalStorage` module and their Web Platform counterparts.
 
-JavaScript operation (TypeScript typing notation) | `LocalStorage` module function
----|---
-`window.localStorage.putItem(key: string, value: string): void` | `LocalStorage.localPut : Key -> String -> Task ()`
-`window.localStorage.getItem(key: string): string \| undefined` | `LocalStorage.localGet : Key -> Task String`
-`window.localStorage.removeItem(key: string): void` | `LocalStorage.localRemove : Key -> Task ()`
-`window.localStorage.key(index: integer): string`<br>where index = 0 .. `window.localStorage.length` | `LocalStorage.localListkeys : Task (List String)`
-`window.localStorage.clear(): void` | `LocalStorage.localClear : Task ()`
-`window.sessionStorage.putItem(key: string, value: string): void` | `LocalStorage.sessionPut : Key -> String -> Task ()`
-`window.sessionStorage.getItem(key: string): string \| undefined` | `LocalStorage.sessionGet : Key -> Task String`
-`window.sessionStorage.removeItem(key: string): void` | `LocalStorage.sessionRemove : Key -> Task ()`
-`window.sessionStorage.key(index: integer): string`<br>where index = 0 .. `window.sessionStorage.length` | `LocalStorage.localListkeys : Task (List String)`
-`window.sessionStorage.clear(): void` | `LocalStorage.sessionClear : Task ()`
+* `window.localStorage.putItem(key, value): void`
+    + `LocalStorage.localPut`
+* `window.localStorage.getItem(key): string | undefined`
+    + `LocalStorage.localGet`
+* `window.localStorage.removeItem(key): void`
+    + `LocalStorage.localRemove`
+* `window.localStorage.key(index): string` (where index = 0 .. `window.localStorage.length`)
+    + `LocalStorage.localListkeys`
+* `window.localStorage.clear(): void`
+    + `LocalStorage.localClear`
+* `window.sessionStorage.putItem(key, value): void`
+    + `LocalStorage.sessionPut`
+* `window.sessionStorage.getItem(key): string | undefined`
+    + `LocalStorage.sessionGet`
+* `window.sessionStorage.removeItem(key): void`
+    + `LocalStorage.sessionRemove`
+* `window.sessionStorage.key(index): string` (where index = 0 .. `window.sessionStorage.length`)
+    + `LocalStorage.sessionListkeys`
+* `window.sessionStorage.clear(): void`
+    + `LocalStorage.sessionClear`
 
 ### Basic examples
 
