@@ -3,7 +3,7 @@
     "name": "lobanov/elm-localstorage",
     "summary": "Interact with window.localStorage and window.sessionStorage using Task API",
     "license": "Apache-2.0",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "exposed-modules": [
         "LocalStorage"
     ],

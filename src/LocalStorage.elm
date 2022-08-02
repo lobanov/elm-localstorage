@@ -30,8 +30,11 @@ in `window.localStorage` and `window.sessionStorage` objects.
 -}
 type alias Key = String
 
+moduleVersion : String
+moduleVersion = "1.0.1"
+
 inNS : String -> QualifiedName
-inNS = inNamespace "lobanov/elm-localstorage" "1.0.0"
+inNS = inNamespace "lobanov/elm-localstorage" moduleVersion
 
 {- Function names registered by JavaScript companion -}
 localStorage = 
